@@ -71,7 +71,7 @@ bool RunMP(const char *clientDllPath)
 		return false;
 	}
 
-	MonoMethod* monoClassMethod = mono.mono_class_get_method_from_name(monoClass, "Start", 0);
+	MonoMethod* monoClassMethod = mono.mono_class_get_method_from_name(monoClass, "Start", 1);
 	if (!monoClassMethod)
 	{
 		return false;
@@ -80,7 +80,9 @@ bool RunMP(const char *clientDllPath)
 	// As there is no 'gold method' of verifying that the call succeeded (at least not documented).
 	// We trust it and just invoke the method.
 
-	mono.mono_runtime_invoke(monoClassMethod, nullptr, nullptr, nullptr);
+	MonoString *commandLineString = mono.mono_string_new(domain, GetCommandLineA());
+	void *args[1] = { commandLineString };
+	mono.mono_runtime_invoke(monoClassMethod, nullptr, args, nullptr);
 	return true;
 }
 

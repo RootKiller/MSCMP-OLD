@@ -123,7 +123,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return 0;
 	}
 
-	if (!CreateProcess(gameExePath, NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, installFolder, &startupInfo, &processInformation)) {
+	size_t cdlBufferSize = strlen(gameExePath) + 3 + strlen(lpCmdLine) + 1;
+	char *cdlBuffer = new char[cdlBufferSize];
+	snprintf(cdlBuffer, cdlBufferSize, "\"%s\" %s", gameExePath, lpCmdLine);
+	const BOOL createProcessResult = CreateProcess(gameExePath, cdlBuffer, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, installFolder, &startupInfo, &processInformation);
+	delete[]cdlBuffer;
+	if (!createProcessResult) {
 		MessageBox(NULL, "Cannot create game process.", "Fatal error", MB_ICONERROR);
 		return 0;
 	}

@@ -29,6 +29,7 @@ typedef void (CONV *g_free_t)(void *data);
 typedef void (CONV *mono_print_unhandled_exception_t)(MonoObject *exception);
 typedef void (CONV *mono_trace_set_level_string_t)(const char *level);
 typedef int (CONV *mono_trace_set_mask_string_t)(const char *mask);
+typedef MonoString *(CONV *mono_string_new_t)(MonoDomain *domain, const char *text);
 
 class Mono
 {
@@ -71,6 +72,7 @@ public:
 	MONOFUNC(mono_print_unhandled_exception);
 	MONOFUNC(mono_trace_set_level_string);
 	MONOFUNC(mono_trace_set_mask_string);
+	MONOFUNC(mono_string_new);
 
 #undef MONOFUNC
 };

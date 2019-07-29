@@ -4,6 +4,7 @@ using System.Diagnostics;
 using UnityEngine;
 using System;
 using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 
 namespace MSCMP
 {
@@ -23,12 +24,19 @@ namespace MSCMP
 		public static readonly Steamworks.AppId_t GAME_APP_ID = new Steamworks.AppId_t(516750);
 
 		/// <summary>
+		/// Command line dictionary - key is param, value is value (can be empty)
+		/// </summary>
+		public static Dictionary<string, string> commandLineDict = new Dictionary<string, string>();
+
+		/// <summary>
 		/// Starts the mod. Called from Injector.
 		/// </summary>
-		public static void Start() {
+		public static void Start(string commandLine) {
 			if (!SetupLogger()) {
 				return;
 			}
+
+			ParseCommandLine(commandLine);
 
 			Logger.SetAutoFlush(true);
 
@@ -151,7 +159,7 @@ namespace MSCMP
 			string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 			string mscmpData = appData + "/MSCMP";
 			bool mscmpDataExists = Directory.Exists(mscmpData);
-			if (! mscmpDataExists) {
+			if (!mscmpDataExists) {
 				try {
 					mscmpDataExists = Directory.CreateDirectory(mscmpData).Exists;
 				}
@@ -178,5 +186,127 @@ namespace MSCMP
 			return true;
 		}
 
+		enum ParserState
+		{
+			EatingTillKey, EatingTillValue, ReadingKey, ReadingValue,
+		}
+
+		/// <summary>
+		/// Parses given command line and adds parsed parameters to commandLine param.
+		/// </summary>
+		/// <param name="commandLine"></param>
+		static private void ParseCommandLine(string commandLine)
+		{
+			if (commandLine.Length == 0) {
+				return;
+			}
+
+			int parsingIndex = 0;
+
+			// Command line starts from quotes - path. Skip it.
+			if (commandLine[0] == '"') {
+				parsingIndex = commandLine.IndexOf('"', 1) + 1;
+			}
+
+			ParserState state = ParserState.EatingTillKey;
+			string buffer = string.Empty;
+			string currentParam = string.Empty;
+
+			Action registerParam = () => {
+				currentParam = buffer;
+				commandLineDict[currentParam] = "";
+				buffer = "";
+			};
+			Action registerValue = () => {
+				commandLineDict[currentParam] = buffer.TrimEnd(' ');
+				currentParam = "";
+				buffer = "";
+			};
+			for (; parsingIndex<commandLine.Length; ++parsingIndex) {
+
+				char currentCharacter = commandLine[parsingIndex];
+				switch (state) {
+					case ParserState.EatingTillKey:
+					case ParserState.EatingTillValue:
+						// If - is found we are reading new key.
+
+						if (currentCharacter == '-') {
+							state = ParserState.ReadingKey;
+							buffer += currentCharacter;
+							break;
+						}
+
+						// If space is found we are reading value - only if there is was key before.
+
+						if ((state == ParserState.EatingTillValue) && (currentCharacter != ' ')) {
+							state = ParserState.ReadingValue;
+							buffer += currentCharacter;
+							break;
+						}
+						break;
+					case ParserState.ReadingKey:
+						// Read key till space is found
+
+						if (currentCharacter == ' ') {
+							registerParam();
+							state = ParserState.EatingTillValue;
+							break;
+						}
+
+						buffer += currentCharacter;
+						break;
+
+					case ParserState.ReadingValue:
+						// Super simple value reading, we read until end of string or dash for another option is here.
+
+						if (currentCharacter == '-') {
+							registerValue();
+							state = ParserState.ReadingKey;
+							buffer += currentCharacter;
+							break;
+						}
+
+						buffer += currentCharacter;
+						break;
+				}
+			}
+
+			// Finalize parser state - end of string case
+
+			switch (state) {
+				case ParserState.ReadingKey:
+					registerParam();
+					break;
+
+				case ParserState.ReadingValue:
+					registerValue();
+					break;
+			}
+		}
+
+		/// <summary>
+		/// Gets command line parameter value.
+		/// </summary>
+		/// <param name="param">Name of the parameter with the dash prefix</param>
+		/// <param name="value">String where value should be append</param>
+		/// <returns>true if parameter is set, false otherwise</returns>
+		static private bool GetCdlParamValue(string param, ref string value)
+		{
+			if (commandLineDict.ContainsKey(param)) {
+				value = commandLineDict[param];
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// Check if given command line parameter is set.
+		/// </summary>
+		/// <param name="param"></param>
+		/// <returns></returns>
+		static public bool IsCdlParamSet(string param)
+		{
+			return commandLineDict.ContainsKey(param);
+		}
 	}
 }

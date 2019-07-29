@@ -44,6 +44,8 @@ bool Mono::Setup(const char *MonoDllPath)
 	MONOFUNC(mono_print_unhandled_exception);
 	MONOFUNC(mono_trace_set_level_string);
 	MONOFUNC(mono_trace_set_mask_string);
+	MONOFUNC(mono_string_new);
+
 #undef MONOFUNC
 
 	return true;

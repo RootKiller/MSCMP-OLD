@@ -63,12 +63,29 @@ namespace MSCMP {
 
 			IMGUIUtils.Setup();
 
+			string initialLevel = string.Empty;
+			bool noSplash = Client.IsCdlParamSet("-nosplash");
+
 #if !PUBLIC_RELEASE
-			// Skip splash screen in development builds.
-			Application.LoadLevel("MainMenu");
+			// Always skip splash screen in development builds.
+			noSplash = true;
 
 			DevTools.OnInit();
 #endif
+
+			if (noSplash) {
+				initialLevel = "MainMenu";
+			}
+
+			// Add option to automatically host game via command line.
+			if (Client.IsCdlParamSet("-autohost")) {
+				initialLevel = "GAME";
+			}
+
+			if (initialLevel != string.Empty) {
+				Application.LoadLevel(initialLevel);
+			}
+
 		}
 
 		/// <summary>
