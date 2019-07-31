@@ -1,5 +1,8 @@
 # My Summer Car Multiplayer Mod
 
+# This is old source code of the My Summer Car: Multiplayer Mod, this version contains basic COOP style gameplay. No longer supported and will most likely not work on latest versions of My Summer Car.
+
+
 ## How to work on the mod?
 
 ### 1. Clone repository.
